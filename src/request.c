@@ -6,6 +6,7 @@
 // Hopefully this is not a problem ... :)
 //
 
+//Definition of the maximum buffer that I want to handle
 #define MAXBUF (8192)
 
 void request_error(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg) {
@@ -149,8 +150,11 @@ void request_handle(int fd) {
     char filename[MAXBUF], cgiargs[MAXBUF];
     
     readline_or_die(fd, buf, MAXBUF);
+    // we read the buf, and now we write 3 strings: one on method, one on uri and one in version.
     sscanf(buf, "%s %s %s", method, uri, version);
     printf("method:%s uri:%s version:%s\n", method, uri, version);
+    //We compare two strings. If the two strings are the same, we get a 0. For every method 
+    //different of GET, we show a Not implemented method message.
     
     if (strcasecmp(method, "GET")) {
 	request_error(fd, method, "501", "Not Implemented", "server does not implement this method");
