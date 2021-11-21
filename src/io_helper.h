@@ -30,8 +30,17 @@ typedef struct sockaddr sockaddr_t;
 // e.g., macro 'fork_or_die()' below returns 'pid' value
 #define fork_or_die() \
     ({ pid_t pid = fork(); assert(pid >= 0); pid; })
+    //assert evaluates a variable or any C expression. 
+    //If expression evaluates to TRUE, assert() does nothing. 
+    //If expression evaluates to FALSE, assert() displays an error message on 
+    //stderr (standard error stream to display error messages and diagnostics) 
+    //and aborts program execution.
 #define execve_or_die(filename, argv, envp) \
     assert(execve(filename, argv, envp) == 0); 
+    //execve() executes the program referred to by pathname.  This
+    // causes the program that is currently being run by the calling
+    // process to be replaced with a new program, with newly initialized
+    // stack, heap, and (initialized and uninitialized) data segments.
 #define wait_or_die(status) \
     ({ pid_t pid = wait(status); assert(pid >= 0); pid; })
 #define gethostname_or_die(name, len) \
