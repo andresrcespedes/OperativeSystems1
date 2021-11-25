@@ -1,5 +1,11 @@
+#include <stdio.h> 
 #include "io_helper.h"
 #include "request.h"
+#include <pthread.h> //We include this library in order to implement varius threads.
+//The string.h header defines one variable type, one macro, 
+//and various functions for manipulating arrays of characters.
+#include <string.h>
+
 
 //
 // Some of this code stolen from Bryant/O'Halloran

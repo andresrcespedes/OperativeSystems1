@@ -1,6 +1,3 @@
-//Hi Quichao
-//Test branch
-
 #include <stdio.h>
 #include "request.h"
 #include "io_helper.h"
@@ -39,10 +36,10 @@ int main(int argc, char *argv[]) {
 	    threads = atoi(optarg);
 	    break;
 	case 'b':
-	    buffers = atoi(optarg);
+	    buffermax = atoi(optarg);
 	    break;
 	default:
-	// We change by adding the threads and the buffers
+	// We made a little change by adding the threads and the buffers
 	    fprintf(stderr, "usage: wserver [-d basedir] [-p port] [-t threads] [-b buffers]\n");
 	    exit(1);
 	}

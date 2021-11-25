@@ -4,6 +4,7 @@
 
 int threads;
 int buffersmax;
+int buffer;
 
 void request_handle(int fd);
 
