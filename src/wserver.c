@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 //Request.h file
 
 	threads=ThreadsDefault;   //amount of threads
-	buffermax=BuffersDefault; //Maximum size of the buffer
+	buffersmax=BuffersDefault; //Maximum size of the buffer
     
     while ((c = getopt(argc, argv, "d:p:t:b:")) != -1)
 	switch (c) {
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 	    threads = atoi(optarg);
 	    break;
 	case 'b':
-	    buffermax = atoi(optarg);
+	    buffersmax = atoi(optarg);
 	    break;
 	default:
 	// We made a little change by adding the threads and the buffers

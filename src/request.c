@@ -213,7 +213,7 @@ void request_serve_static(int fd, char *filename, int filesize) {
 
 //The function that we will use in order to really manage the threads (FIFO):
 // Take the request from the queue of the buffer 
-void* request_buffer_handler(void* arg);
+void* request_buffer_handler(void* arg)
 {
   while (1)
   {
