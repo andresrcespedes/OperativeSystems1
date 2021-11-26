@@ -15,6 +15,69 @@
 //Definition of the maximum buffer that I want to handle
 #define MAXBUF (8192)
 
+
+
+//We need to initialize the locks for the threads. 
+//With POSIX threads (pthreads) there are two  ways of initializing the locks (and conditions):
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+// or 
+// int rc = pthread_mutex_init(&lock, NULL); assert(rc == 0); // always check success!
+
+
+
+
+
+typedef struct file_inf{
+  int fd;
+  char *filename;
+  int filesize;
+}File_inf;
+
+File_inf BUFFER[1000];
+int tail = -1;
+int head = 0;
+int actual_buff_size = 0;
+
+
+//We need two functions that will be in charge of filling or clearing the buffer's queue
+
+int fill_buffer(int fd,char *filename,int filesize)
+{
+  if (actual_buff_size == buffersmax) //First we check if the actual buffer size is the same as the maximum
+  // buffer size (that means that the buffer is full)
+    return -1; 
+  tail = (tail + 1) % buffersmax;
+  BUFFER[tail].fd = fd;
+  BUFFER[tail].filename=filename;
+  BUFFER[tail].filesize=filesize;
+  printf("+");
+  printf("The connection request for the file: %s was added to the buffer.\n", filename);
+  printf("+");
+  actual_buff_size++;
+  return 1; 
+}
+
+File_inf clear_buffer()
+{
+  File_inf clear_check;  //return value
+  clear_check.fd=-1;
+  clear_check.filename=NULL;
+  clear_check.filesize=-1;
+  if (actual_buff_size == 0)
+    return clear_check;
+  clear_check.fd= BUFFER[head].fd;
+  clear_check.filename=BUFFER[head].filename;
+  clear_check.filesize=BUFFER[head].filesize;
+  printf("-");
+  printf("The connection request for the file: %s was removed to the buffer.\n", clear_check.filename);
+  printf("-");
+  head = (head + 1) % buffersmax;
+  actual_buff_size--;
+  return clear_check;
+}
+
+
 void request_error(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg) {
     char buf[MAXBUF], body[MAXBUF];
     
@@ -148,10 +211,34 @@ void request_serve_static(int fd, char *filename, int filesize) {
     munmap_or_die(srcp, filesize);
 }
 
+//The function that we will use in order to really manage the threads (FIFO):
+// Take the request from the queue of the buffer 
+void* request_buffer_handler(void* arg);
+{
+  while (1)
+  {
+      File_inf file_inf;
+      pthread_mutex_lock(&lock);
+      file_inf=clear_buffer();
+      while(file_inf.fd == -1)
+      {
+        pthread_cond_wait(&cond, &lock);
+        file_inf = clear_buffer();
+      }
+      pthread_mutex_unlock(&lock);
+
+      //we have a connection, now thread is doing its work
+      request_serve_static(file_inf.fd,file_inf.filename,file_inf.filesize);
+      close_or_die(file_inf.fd);
+  }
+} 
+
+
+
 // handle a request
 void request_handle(int fd) {
     int is_static;
-    struct stat sbuf;
+    struct stat sbuf; //this struct has numerous fields. Example: we will use st_mode for the File type and mode 
     char buf[MAXBUF], method[MAXBUF], uri[MAXBUF], version[MAXBUF];
     char filename[MAXBUF], cgiargs[MAXBUF];
     
@@ -179,6 +266,28 @@ void request_handle(int fd) {
 	    request_error(fd, filename, "403", "Forbidden", "server could not read this file");
 	    return;
 	}
+    // In here we can implement a simple but effective methode to ensure what was requested:
+    //"The server should try to ensure that file accesses do not access
+    //files above this directory in the file-system hierarchy."
+    if(strstr(filename,".."))
+    {
+      request_error(fd, filename, "403","Forbidden", "You are not allowed to access files above the current directory");
+      return;
+    }
+
+    //In here we implement the scheduling alorithm. We chose a first in first out (FIFO) algorithm
+
+    pthread_mutex_lock(&lock); //We assure that the mutex is locked 
+    int value_q=fill_buffer(fd,filename,sbuf.st_size); //We add the request on the queue until it fills up.
+    while(value_q==-1)
+    {
+        value_q=fill_buffer(fd,filename,sbuf.st_size); //As the queue is full, we check until a space is available and then it is used
+    }
+   
+    pthread_cond_signal(&cond);  //We assure that at least one of the threads is unblocked (ready to be used ) 
+    pthread_mutex_unlock(&lock); //We assure that the mutex is unlocked 
+        
+
 	request_serve_static(fd, filename, sbuf.st_size);
     } else {
 	if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode)) {

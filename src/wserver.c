@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
 	for(int i=0; i<threads; i++)
 	//create a new thread, as we want the default attributes for simplicity, we can left 
 	// it as NULL
-    	pthread_create(&thread_pool[i], NULL, thread_request_serve_static, NULL); //
+    	pthread_create(&thread_pool[i], NULL, request_buffer_handler, NULL); //
 	// we can initialize the buffer size in 0
 	buffer = 0;	
 
