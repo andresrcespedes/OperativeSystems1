@@ -49,7 +49,7 @@ int fill_buffer(int fd,char *filename,int filesize)
   if (actual_buff_size == buffersmax) //First we check if the actual buffer size is the same as the maximum
   // buffer size (that means that the buffer is full)
     return -1; 
-  tail = (tail + 1) % buffersmax;
+  tail = (tail + 1) % buffersmax; // Modulo will cause the head and tail values to reset to 0 when the maximum size is reached.
   BUFFER[tail].fd = fd;
   BUFFER[tail].filename=filename;
   BUFFER[tail].filesize=filesize;
