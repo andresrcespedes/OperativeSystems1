@@ -41,6 +41,8 @@ int actual_buff_size = 0;
 
 
 //We need two functions that will be in charge of filling or clearing the buffer's queue
+//It is a little adaptation of the Circular buffer that is presented on 
+// https://embeddedartistry.com/blog/2017/05/17/creating-a-circular-buffer-in-c-and-c/
 
 int fill_buffer(int fd,char *filename,int filesize)
 {
