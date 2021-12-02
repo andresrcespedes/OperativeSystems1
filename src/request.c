@@ -187,6 +187,42 @@ void request_serve_dynamic(int fd, char *filename, char *cgiargs) {
     }
 }
 
+void *Master_Thread(void *args){
+    struct stat sbuf;
+    char buf[MAXBUF], method[MAXBUF], uri[MAXBUF], version[MAXBUF];
+    char filename[MAXBUF], cgiargs[MAXBUF];
+
+    struct inputINFO *INPUT = (void *)args;
+    for(int i=0; i<INPUT->input_th; i++)
+    pthread_create(&INPUT->PointerToPool[i], NULL, request_buffer_handler, NULL);
+
+    buffer = 0;	
+
+    // now, get to work
+    int listen_fd = open_listen_fd_or_die(INPUT->input_ports);
+    while (1) {
+	struct sockaddr_in client_addr;
+	int client_len = sizeof(client_addr);
+	int conn_fd = accept_or_die(listen_fd, (sockaddr_t *) &client_addr, (socklen_t *) &client_len);
+
+    //In here we implement the scheduling alorithm. We chose a first in first out (FIFO) algorithm
+
+    pthread_mutex_lock(&lock); //We assure that the mutex is locked 
+    int value_q=fill_buffer(conn_fd,filename,sbuf.st_size); //We add the request on the queue until it fills up.
+    while(value_q==-1)
+    {
+        value_q=fill_buffer(conn_fd,filename,sbuf.st_size); //As the queue is full, we check until a space is available and then it is used
+    }
+   
+    pthread_cond_signal(&cond);  //We assure that at least one of the threads is unblocked (ready to be used ) 
+    pthread_mutex_unlock(&lock); //We assure that the mutex is unlocked 
+
+	//request_handle(conn_fd);
+	// close_or_die(conn_fd);
+    }
+}
+
+
 void request_serve_static(int fd, char *filename, int filesize) {
     int srcfd;
     char *srcp, filetype[MAXBUF], buf[MAXBUF];
@@ -231,7 +267,7 @@ void *request_buffer_handler(void *arg)
       pthread_mutex_unlock(&lock);
 
       //we have a connection, now thread is doing its work
-      request_serve_static(file_inf.fd,file_inf.filename,file_inf.filesize);
+      request_handle(file_inf.fd);
       close_or_die(file_inf.fd);
   }
 } 
@@ -277,7 +313,7 @@ void request_handle(int fd) {
       request_error(fd, filename, "403","Forbidden", "You are not allowed to access files above the current directory");
       return;
     }
-
+    /*
     //In here we implement the scheduling alorithm. We chose a first in first out (FIFO) algorithm
 
     pthread_mutex_lock(&lock); //We assure that the mutex is locked 
@@ -289,7 +325,7 @@ void request_handle(int fd) {
    
     pthread_cond_signal(&cond);  //We assure that at least one of the threads is unblocked (ready to be used ) 
     pthread_mutex_unlock(&lock); //We assure that the mutex is unlocked 
-        
+    */    
 
 	request_serve_static(fd, filename, sbuf.st_size);
     } else {

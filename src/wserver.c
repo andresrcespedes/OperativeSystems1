@@ -3,6 +3,7 @@
 #include "io_helper.h"
 #include <pthread.h> //We include this library in order to implement varius threads.
 
+
 char default_root[] = ".";
 
 // in this part we just write how we want the C program to be invoked. For now it is like:
@@ -17,6 +18,7 @@ int main(int argc, char *argv[]) {
     int c;
     char *root_dir = default_root;
     int port = 10000;
+	pthread_t M_Thread;
 
 //We select the default values that where given in the ReadMe file. Those values are defined on the
 //Request.h file
@@ -44,12 +46,22 @@ int main(int argc, char *argv[]) {
 	    exit(1);
 	}
 
-    // run out of this directory
-    chdir_or_die(root_dir);
+    
 
 	//The Threads part:
 	// 1st we have to create a thread pool depending on the number of threads that we want
 	pthread_t thread_pool[threads]; //pthread_t is used to identify a thread
+	struct inputINFO INPUT;
+		INPUT.input_th=threads;
+		INPUT.input_buff=buffersmax;
+		INPUT.input_ports=port;
+		INPUT.PointerToPool=&thread_pool;
+	// run out of this directory
+    chdir_or_die(root_dir);
+	pthread_create(&M_Thread,NULL,Master_Thread,&INPUT);
+	pthread_join(&M_Thread,NULL);
+	
+	/*
 	for(int i=0; i<threads; i++)
 	//create a new thread, as we want the default attributes for simplicity, we can left 
 	// it as NULL
@@ -66,6 +78,8 @@ int main(int argc, char *argv[]) {
 	request_handle(conn_fd);
 	// close_or_die(conn_fd);
     }
+	*/
+
     return 0;
 }
 
