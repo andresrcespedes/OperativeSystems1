@@ -18,11 +18,9 @@
 
 
 //We need to initialize the locks for the threads. 
-//With POSIX threads (pthreads) there are two  ways of initializing the locks (and conditions):
+//With POSIX threads (pthreads) we initialize the locks (and conditions):
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
-// or 
-// int rc = pthread_mutex_init(&lock, NULL); assert(rc == 0); // always check success!
 
 
 
@@ -54,9 +52,7 @@ int fill_buffer(int fd,char *filename,int filesize)
   BUFFER[tail].fd = fd;
   BUFFER[tail].filename=filename;
   BUFFER[tail].filesize=filesize;
-  printf("+");
-  printf("The connection request for the file: %s was added to the buffer.\n", filename);
-  printf("+");
+  printf("+A connection request was added to the buffer\n");
   actual_buff_size++;
   return 1; 
 }
@@ -72,9 +68,7 @@ File_inf clear_buffer()
   clear_check.fd= BUFFER[head].fd;
   clear_check.filename=BUFFER[head].filename;
   clear_check.filesize=BUFFER[head].filesize;
-  printf("-");
-  printf("The connection request for the file: %s was removed to the buffer.\n", clear_check.filename);
-  printf("-");
+  printf("-A connection request was removed from the buffer\n");
   head = (head + 1) % buffersmax;
   actual_buff_size--;
   return clear_check;
@@ -187,41 +181,6 @@ void request_serve_dynamic(int fd, char *filename, char *cgiargs) {
     }
 }
 
-void *Master_Thread(void *args){
-    struct stat sbuf;
-    char buf[MAXBUF], method[MAXBUF], uri[MAXBUF], version[MAXBUF];
-    char filename[MAXBUF], cgiargs[MAXBUF];
-
-    struct inputINFO *INPUT = (void *)args;
-    for(int i=0; i<INPUT->input_th; i++)
-    pthread_create(&INPUT->PointerToPool[i], NULL, request_buffer_handler, NULL);
-
-    buffer = 0;	
-
-    // now, get to work
-    int listen_fd = open_listen_fd_or_die(INPUT->input_ports);
-    while (1) {
-	struct sockaddr_in client_addr;
-	int client_len = sizeof(client_addr);
-	int conn_fd = accept_or_die(listen_fd, (sockaddr_t *) &client_addr, (socklen_t *) &client_len);
-
-    //In here we implement the scheduling alorithm. We chose a first in first out (FIFO) algorithm
-
-    pthread_mutex_lock(&lock); //We assure that the mutex is locked 
-    int value_q=fill_buffer(conn_fd,filename,sbuf.st_size); //We add the request on the queue until it fills up.
-    while(value_q==-1)
-    {
-        value_q=fill_buffer(conn_fd,filename,sbuf.st_size); //As the queue is full, we check until a space is available and then it is used
-    }
-   
-    pthread_cond_signal(&cond);  //We assure that at least one of the threads is unblocked (ready to be used ) 
-    pthread_mutex_unlock(&lock); //We assure that the mutex is unlocked 
-
-	//request_handle(conn_fd);
-	// close_or_die(conn_fd);
-    }
-}
-
 
 void request_serve_static(int fd, char *filename, int filesize) {
     int srcfd;
@@ -250,28 +209,6 @@ void request_serve_static(int fd, char *filename, int filesize) {
     munmap_or_die(srcp, filesize);
 }
 
-//The function that we will use in order to really manage the threads (FIFO):
-// Take the request from the queue of the buffer 
-void *request_buffer_handler(void *arg)
-{
-  while (1)
-  {
-      File_inf file_inf;
-      pthread_mutex_lock(&lock);
-      file_inf=clear_buffer();
-      while(file_inf.fd == -1)
-      {
-        pthread_cond_wait(&cond, &lock);
-        file_inf = clear_buffer();
-      }
-      pthread_mutex_unlock(&lock);
-
-      //we have a connection, now thread is doing its work
-      request_handle(file_inf.fd);
-      close_or_die(file_inf.fd);
-  }
-} 
-
 
 
 // handle a request
@@ -285,6 +222,7 @@ void request_handle(int fd) {
     // we read the buf, and now we write 3 strings: one on method, one on uri and one in version.
     sscanf(buf, "%s %s %s", method, uri, version);
     printf("method:%s uri:%s version:%s\n", method, uri, version);
+    printf("\n");
     //We compare two strings. If the two strings are the same, we get a 0. For every method 
     //different of GET, we show a Not implemented method message.
     
@@ -312,20 +250,7 @@ void request_handle(int fd) {
     {
       request_error(fd, filename, "403","Forbidden", "You are not allowed to access files above the current directory");
       return;
-    }
-    /*
-    //In here we implement the scheduling alorithm. We chose a first in first out (FIFO) algorithm
-
-    pthread_mutex_lock(&lock); //We assure that the mutex is locked 
-    int value_q=fill_buffer(fd,filename,sbuf.st_size); //We add the request on the queue until it fills up.
-    while(value_q==-1)
-    {
-        value_q=fill_buffer(fd,filename,sbuf.st_size); //As the queue is full, we check until a space is available and then it is used
-    }
-   
-    pthread_cond_signal(&cond);  //We assure that at least one of the threads is unblocked (ready to be used ) 
-    pthread_mutex_unlock(&lock); //We assure that the mutex is unlocked 
-    */    
+    }   
 
 	request_serve_static(fd, filename, sbuf.st_size);
     } else {
@@ -336,3 +261,66 @@ void request_handle(int fd) {
 	request_serve_dynamic(fd, filename, cgiargs);
     }
 }
+
+
+//We create in here the master thread to manage the threads 
+void *Master_Thread(void *args){
+    struct stat sbuf;
+    char filename[MAXBUF];
+
+    struct inputINFO *INPUT = (void *)args;
+    for(int i=0; i<INPUT->input_th; i++)
+    // 1st we have to create a thread pool depending on the number of threads that we want, 
+    //the number of which is specified on the command line.
+    pthread_create(&INPUT->PointerToPool[i], NULL, request_buffer_handler, NULL);
+
+    buffer = 0;	
+
+    // now, get to work
+    int listen_fd = open_listen_fd_or_die(INPUT->input_ports); 
+    //The -> operator dereferences the pointer to struct (left operand) and
+    //then accesses the value of a member of the struct (right operand).
+    while (1) {
+	struct sockaddr_in client_addr;
+	int client_len = sizeof(client_addr);
+	int conn_fd = accept_or_die(listen_fd, (sockaddr_t *) &client_addr, (socklen_t *) &client_len);
+
+    //In here we implement the scheduling alorithm. We chose a first in first out (FIFO) algorithm
+
+    pthread_mutex_lock(&lock); //We assure that the mutex is locked 
+    int value_q=fill_buffer(conn_fd,filename,sbuf.st_size); //We add the request on the queue until it fills up.
+    while(value_q==-1)
+    {
+        value_q=fill_buffer(conn_fd,filename,sbuf.st_size); //As the queue is full, we check until a space is available and then it is used
+    }
+   
+    pthread_cond_signal(&cond);  //We assure that at least one of the threads is unblocked (ready to be used ) 
+    pthread_mutex_unlock(&lock); //We assure that the mutex is unlocked 
+
+	//request_handle(conn_fd);
+	// close_or_die(conn_fd);
+    }
+}
+
+
+//The function that we will use in order to really manage the threads (FIFO):
+// Take the request from the queue of the buffer 
+void *request_buffer_handler(void *arg)
+{
+  while (1)
+  {
+      File_inf file_inf;
+      pthread_mutex_lock(&lock);
+      file_inf=clear_buffer();
+      while(file_inf.fd == -1)
+      {
+        pthread_cond_wait(&cond, &lock);
+        file_inf = clear_buffer();
+      }
+      pthread_mutex_unlock(&lock);
+
+      //we have a connection, now thread is doing its work
+      request_handle(file_inf.fd);
+      close_or_die(file_inf.fd);
+  }
+} 

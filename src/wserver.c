@@ -27,30 +27,27 @@ int main(int argc, char *argv[]) {
 	buffersmax=BuffersDefault; //Maximum size of the buffer
     
     while ((c = getopt(argc, argv, "d:p:t:b:")) != -1)
-	switch (c) {
-	case 'd':
-	    root_dir = optarg;
-	    break;
-	case 'p':
-	    port = atoi(optarg);
-	    break;
-	case 't':
-	    threads = atoi(optarg);
-	    break;
-	case 'b':
-	    buffersmax = atoi(optarg);
-	    break;
-	default:
-	// We made a little change by adding the threads and the buffers
-	    fprintf(stderr, "usage: wserver [-d basedir] [-p port] [-t threads] [-b buffers]\n");
-	    exit(1);
+		switch (c) {
+		case 'd':
+			root_dir = optarg;
+			break;
+		case 'p':
+			port = atoi(optarg);
+			break;
+		case 't':
+			threads = atoi(optarg);
+			break;
+		case 'b':
+			buffersmax = atoi(optarg);
+			break;
+		default:
+		// We made a little change by adding the threads and the buffers
+			fprintf(stderr, "usage: wserver [-d basedir] [-p port] [-t threads] [-b buffers]\n");
+			exit(1);
 	}
 
-    
-
-	//The Threads part:
-	// 1st we have to create a thread pool depending on the number of threads that we want
 	pthread_t thread_pool[threads]; //pthread_t is used to identify a thread
+	// We put the the input info in a struct for more the manipulation.
 	struct inputINFO INPUT;
 		INPUT.input_th=threads;
 		INPUT.input_buff=buffersmax;
@@ -58,27 +55,8 @@ int main(int argc, char *argv[]) {
 		INPUT.PointerToPool=&thread_pool;
 	// run out of this directory
     chdir_or_die(root_dir);
-	pthread_create(&M_Thread,NULL,Master_Thread,&INPUT);
-	pthread_join(&M_Thread,NULL);
-	
-	/*
-	for(int i=0; i<threads; i++)
-	//create a new thread, as we want the default attributes for simplicity, we can left 
-	// it as NULL
-    	pthread_create(&thread_pool[i], NULL, request_buffer_handler, NULL); //
-	// we can initialize the buffer size in 0
-	buffer = 0;	
-
-    // now, get to work
-    int listen_fd = open_listen_fd_or_die(port);
-    while (1) {
-	struct sockaddr_in client_addr;
-	int client_len = sizeof(client_addr);
-	int conn_fd = accept_or_die(listen_fd, (sockaddr_t *) &client_addr, (socklen_t *) &client_len);
-	request_handle(conn_fd);
-	// close_or_die(conn_fd);
-    }
-	*/
+	pthread_create(&M_Thread,NULL,Master_Thread,&INPUT); //we create a new thread
+	pthread_join(&M_Thread,NULL); //Wait for a specific thread to exit
 
     return 0;
 }
