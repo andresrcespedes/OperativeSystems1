@@ -264,6 +264,7 @@ void request_handle(int fd) {
 
 
 //We create in here the master thread to manage the threads 
+//the master thread must block and wait if the buffer is full;
 void *Master_Thread(void *args){
     struct stat sbuf;
     char filename[MAXBUF];
@@ -285,7 +286,6 @@ void *Master_Thread(void *args){
 	int client_len = sizeof(client_addr);
 	int conn_fd = accept_or_die(listen_fd, (sockaddr_t *) &client_addr, (socklen_t *) &client_len);
 
-    //In here we implement the scheduling alorithm. We chose a first in first out (FIFO) algorithm
 
     pthread_mutex_lock(&lock); //We assure that the mutex is locked 
     int value_q=fill_buffer(conn_fd,filename,sbuf.st_size); //We add the request on the queue until it fills up.
@@ -297,14 +297,13 @@ void *Master_Thread(void *args){
     pthread_cond_signal(&cond);  //We assure that at least one of the threads is unblocked (ready to be used ) 
     pthread_mutex_unlock(&lock); //We assure that the mutex is unlocked 
 
-	//request_handle(conn_fd);
-	// close_or_die(conn_fd);
     }
 }
 
 
-//The function that we will use in order to really manage the threads (FIFO):
+//In here we make the working threads 
 // Take the request from the queue of the buffer 
+//a worker thread must wait if the buffer is empty.
 void *request_buffer_handler(void *arg)
 {
   while (1)

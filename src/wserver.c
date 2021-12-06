@@ -52,11 +52,11 @@ int main(int argc, char *argv[]) {
 		INPUT.input_th=threads;
 		INPUT.input_buff=buffersmax;
 		INPUT.input_ports=port;
-		INPUT.PointerToPool=&thread_pool;
+		INPUT.PointerToPool=thread_pool;
 	// run out of this directory
     chdir_or_die(root_dir);
 	pthread_create(&M_Thread,NULL,Master_Thread,&INPUT); //we create a new thread
-	pthread_join(&M_Thread,NULL); //Wait for a specific thread to exit
+	pthread_join(M_Thread,NULL); //Wait for a specific thread to exit
 
     return 0;
 }
