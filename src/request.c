@@ -215,6 +215,7 @@ void request_serve_static(int fd, char *filename, int filesize) {
 void request_handle(int fd) {
     int is_static;
     struct stat sbuf; //this struct has numerous fields. Example: we will use st_mode for the File type and mode 
+    //These functions return information about a file, in the buffer pointed to by statbuf.
     char buf[MAXBUF], method[MAXBUF], uri[MAXBUF], version[MAXBUF];
     char filename[MAXBUF], cgiargs[MAXBUF];
     
