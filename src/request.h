@@ -16,7 +16,7 @@ void request_handle(int fd);//Given by the teacher, performs most of the work fo
 //relationship and require that their accesses to the shared buffer be synchronized.
 // They are made in the functions:
 void *Master_Thread(void *args);          //Master Thread
-void* request_buffer_handler(void* arg);  //Worker Threads
+void *Worker_Thread(void* arg);  //Worker Threads
 
 struct inputINFO{
   int input_th;

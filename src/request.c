@@ -273,7 +273,7 @@ void *Master_Thread(void *args){
     for(int i=0; i<INPUT->input_th; i++)
     // 1st we have to create a thread pool depending on the number of threads that we want, 
     //the number of which is specified on the command line.
-    pthread_create(&INPUT->PointerToPool[i], NULL, request_buffer_handler, NULL);
+    pthread_create(&INPUT->PointerToPool[i], NULL, Worker_Thread, NULL);
 
     buffer = 0;	
 
@@ -304,7 +304,7 @@ void *Master_Thread(void *args){
 //In here we make the working threads 
 // Take the request from the queue of the buffer 
 //a worker thread must wait if the buffer is empty.
-void *request_buffer_handler(void *arg)
+void *Worker_Thread(void *arg)
 {
   while (1)
   {
