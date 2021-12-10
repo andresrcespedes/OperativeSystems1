@@ -19,8 +19,6 @@ void *Master_Thread(void *args);          //Master Thread
 void *Worker_Thread(void* arg);  //Worker Threads
 
 struct inputINFO{
-  int input_th;
-  int input_buff;
   int input_ports;
   pthread_t *PointerToPool;
 }InputINFO;

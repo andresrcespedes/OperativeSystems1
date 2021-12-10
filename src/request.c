@@ -271,17 +271,18 @@ void *Master_Thread(void *args){
     char filename[MAXBUF];
 
     struct inputINFO *INPUT = (void *)args;
-    for(int i=0; i<INPUT->input_th; i++)
+    for(int i=0; i<threads; i++)
     // 1st we have to create a thread pool depending on the number of threads that we want, 
     //the number of which is specified on the command line.
     pthread_create(&INPUT->PointerToPool[i], NULL, Worker_Thread, NULL);
+    //The -> operator dereferences the pointer to struct (left operand) and
+    //then accesses the value of a member of the struct (right operand)
 
     buffer = 0;	
 
     // now, get to work
     int listen_fd = open_listen_fd_or_die(INPUT->input_ports); 
-    //The -> operator dereferences the pointer to struct (left operand) and
-    //then accesses the value of a member of the struct (right operand).
+    
     while (1) {
 	struct sockaddr_in client_addr;
 	int client_len = sizeof(client_addr);

@@ -49,8 +49,6 @@ int main(int argc, char *argv[]) {
 	pthread_t thread_pool[threads]; //pthread_t is used to identify a thread
 	// We put the the input info in a struct for more the manipulation.
 	struct inputINFO INPUT;
-		INPUT.input_th=threads;
-		INPUT.input_buff=buffersmax;
 		INPUT.input_ports=port;
 		INPUT.PointerToPool=thread_pool;
 	// run out of this directory
