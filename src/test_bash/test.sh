@@ -8,8 +8,10 @@ echo;
 
 gnome-terminal --window --title='dynamic request 1' \
 --tab --title='dynamic request 2' --tab --title='dynamic request 3' -- bash -c \
-"../wclient localhost 10000 spin.cgi"
+"../wclient localhost 10000 spin.cgi;
+exec bash"
 
 gnome-terminal --window --title='static request 1' \
 --tab --title='static request 2' -- bash -c \
-"../wclient localhost 10000 hello_world.html"
+"../wclient localhost 10000 hello_world.html
+exec bash"
