@@ -32,7 +32,7 @@ typedef struct file_inf{
   int filesize;
 }File_inf;
 
-File_inf BUFFER[1000];
+File_inf BUFFER[1000]; //We create the fixed-size buffer that we will use.
 int tail = -1;
 int head = 0;
 int actual_buff_size = 0;
@@ -271,13 +271,14 @@ void *Master_Thread(void *args){
     char filename[MAXBUF];
 
     struct inputINFO *INPUT = (void *)args;
-    for(int i=0; i<threads; i++)
+    for(int i=0; i<threads; i++){
     // 1st we have to create a thread pool depending on the number of threads that we want, 
     //the number of which is specified on the command line.
     pthread_create(&INPUT->PointerToPool[i], NULL, Worker_Thread, NULL);
     //The -> operator dereferences the pointer to struct (left operand) and
     //then accesses the value of a member of the struct (right operand)
-
+    printf("A thread was created \n");
+    }
     buffer = 0;	
 
     // now, get to work
