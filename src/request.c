@@ -234,6 +234,12 @@ void request_handle(int fd) {
     request_read_headers(fd);
     
     is_static = request_parse_uri(uri, filename, cgiargs);
+    if(strstr(filename,".."))
+    {
+      request_error(fd, filename, "403","Forbidden", "You are not allowed to access files above the current directory");
+      return;
+    } 
+
     if (stat(filename, &sbuf) < 0) {
 	request_error(fd, filename, "404", "Not found", "server could not find this file");
 	return;
@@ -246,12 +252,7 @@ void request_handle(int fd) {
 	}
     // In here we can implement a simple but effective methode to ensure what was requested:
     //"The server should try to ensure that file accesses do not access
-    //files above this directory in the file-system hierarchy."
-    if(strstr(filename,".."))
-    {
-      request_error(fd, filename, "403","Forbidden", "You are not allowed to access files above the current directory");
-      return;
-    }   
+    //files above this directory in the file-system hierarchy."  
 
 	request_serve_static(fd, filename, sbuf.st_size);
     } else {
