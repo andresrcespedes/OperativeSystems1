@@ -11,7 +11,7 @@ cd ..;
 ./wserver -d . -p 10000 -t 3 -b 3;
 exec bash"
 
-# Send a synamic request within the sub-tree for 30 sec.
+# Send a dynamic request within the sub-tree for 30 sec.
 gnome-terminal --window --title='dynamic request 1' \
 -- bash -c \
 "cd ..;
